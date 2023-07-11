@@ -21,7 +21,7 @@ const authenticate = (req, res, next) => {
 // POST endpoint for /liveEvent
 app.post('/liveEvent', authenticate, (req, res) => {
   const event = req.body; 
-
+console.log(event)
   fs.writeFile('eventData.txt', JSON.stringify(event), (err) => {
     if (err) {
       console.error(err);

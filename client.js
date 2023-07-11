@@ -1,25 +1,23 @@
 
 
 const url = 'http://localhost:8000/liveEvent'
-const data = {
-	name: 'John',
-	age: 25,
-}
+
+const eventsFile = require('./events.json')
+
+const events = eventsFile
+
+// console.log(events)
+
 
 fetch(url, {
 	method: 'POST',
 	headers: {
-		'Content-Type': 'application/json',
 		Authorization: 'secret',
 	},
-	body: JSON.stringify(data),
+	body: events,
 })
-	.then((response) => response.json())
-	.then((result) => {
-		// Handle the response from the server
-		console.log(result)
-	})
+	.then((response) => console.log(response.status))
 	.catch((error) => {
-		// Handle any errors that occurred during the request
+	
 		console.error(error)
 	})
