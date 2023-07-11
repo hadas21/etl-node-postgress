@@ -1,4 +1,6 @@
-CREATE TABLE users_revenue (
-   user_id VARCHAR ( 50 ) UNIQUE NOT NULL,
-   revenue INTEGER,
+
+
+CREATE TABLE IF NOT EXISTS users_revenue (
+  user_id VARCHAR(255),
+  revenue INT
 );

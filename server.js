@@ -1,16 +1,39 @@
 const express = require('express')
 const fs = require('fs')
-const connection = require('./db.sql')
+const processEvents = require('./data_processor')
+const { Client } = require('pg')
 
 const app = express()
 const port = 8000
 
 app.use(express.json())
 
+ const connectionString = 'postgresql://me:password@localhost:5432/api'
 
-// Middleware to authenticate the client's calls
+ //create table in db
+const createTable = () => {
+ 
+  const sqlScript = fs.readFileSync('db.sql', 'utf8');
+
+ const client = new Client({ connectionString })
+  client.connect()
+    .then(() => client.query(sqlScript))
+    .then(() => {
+      console.log('Database table created successfully');
+      client.end();
+    })
+    .catch((error) => {
+      console.error('Error creating database table:', error);
+      client.end();
+    });
+};
+
+
+
+
+// Middleware 
 const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization
   if (authHeader === 'secret') {
     next(); 
   } else {
@@ -18,36 +41,45 @@ const authenticate = (req, res, next) => {
   }
 };
 
-// POST endpoint for /liveEvent
+// POST 
 app.post('/liveEvent', authenticate, (req, res) => {
-  const event = req.body; 
-console.log(event)
-  fs.writeFile('eventData.txt', JSON.stringify(event), (err) => {
+const client = new Client({ connectionString })
+  const events = req.body; 
+  
+  fs.writeFile('eventData.txt', JSON.stringify(events), (err) => {
     if (err) {
       console.error(err);
       res.status(500).send('Internal Server Error'); 
     } else {
+      processEvents(events, client)
       res.status(200).send('Event saved successfully'); 
     }
   });
 });
 
-// GET endpoint for /userEvents
+// GET 
 app.get('/userEvents/:userId', (req, res) => {
-	connection.query(
-		'SELECT * FROM users ORDER BY id desc',
-		function (err, rows) {
-			if (err) {
-				req.flash('error', err)
-				res.render('profile', { data: '' })
-			} else {
-				res.render('profile', { data: rows })
-			}
-		}
-	)
+    const client = new Client({ connectionString })
+     client.connect().then(()=> {
+const query = 'SELECT * FROM user_events WHERE user_id = $1';
+      return client.query(query, [userId]);
+    })
+    .then((result) => {
+      const userEvents = result.rows;
+      res.json(userEvents);
+    })
+    .catch((error) => {
+      console.error(`Error fetching user events for user ${userId}:`, error);
+      res.status(500).send('Internal Server Error');
+    })
+    .finally(() => {
+
+      client.end();
+    });
 })
 
 
 app.listen(port, () => {
 	console.log('listening on port ' + port)
+    createTable()
 })
